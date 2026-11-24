@@ -18,7 +18,12 @@ export const median = (values:number[]):number => {
   return v.length%2 ? v[m] : (v[m-1]+v[m])/2;
 };
 export const hasToken = (p:Protocol) => p.mcap_usd !== null && p.gecko_id !== null && p.symbol !== null;
-export const isRankable = (p:Protocol) => p.mcap_usd===null && p.gecko_id===null && p.symbol===null && p.category!=='CEX' && !/\s(V\d+(\.\d+)?|v\d+(\.\d+)?|\d+\.\d+)$/.test(p.name);
+const productCategories = new Set(['Bridge','Canonical Bridge','Liquid Staking','Liquid Restaking','Restaked BTC','CEX']);
+export const isRankable = (p:Protocol) => p.mcap_usd===null && p.gecko_id===null && p.symbol===null
+  && !productCategories.has(p.category ?? '')
+  && !/\b(wrapped|staked|staking)\b/i.test(p.name)
+  && !/^(Binance|Coinbase|Bybit|Kraken|Bitget|OKX|Bitfinex|Gemini)/i.test(p.name)
+  && !/\s(V\d+(\.\d+)?|v\d+(\.\d+)?|\d+\.\d+)$/.test(p.name);
 const tokenPeers = (protocols:Protocol[]) => protocols.filter(p=>hasToken(p) && p.tvl_usd>=5_000_000);
 const ratioOf = (p:Protocol) => clamp(p.mcap_usd! / p.tvl_usd, MODEL.ratio_floor, MODEL.ratio_cap);
 
