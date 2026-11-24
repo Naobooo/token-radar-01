@@ -97,6 +97,32 @@ export function parseSnapshot(raw:string):Snapshot {
   if (!Array.isArray(snapshot.protocols) || !Array.isArray(snapshot.watchlist) || !/^\d{4}-\d{2}-\d{2}$/.test(snapshot.as_of)) throw new Error('Malformed snapshot');
   return snapshot;
 }
+// Dashboard evidence is separate from board rows; the ranking model stays unchanged.
+export function withPeerEvidence(radar:ReturnType<typeof buildRadar>['radar'],snapshot:Snapshot) {
+  const global=tokenPeers(snapshot.protocols);
+  const percentile=(sorted:number[],q:number) => {
+    const index=(sorted.length-1)*q, lower=Math.floor(index);
+    return sorted[lower]+(sorted[Math.ceil(index)]-sorted[lower])*(index-lower);
+  };
+  const compactUSD=(value:number) => '$'+(value>=1e9?(value/1e9).toFixed(2)+'B':value>=1e6?(value/1e6).toFixed(2)+'M':Math.round(value).toLocaleString('en-US'));
+  const rows=radar.rows.map(row=>{
+    const own=global.filter(p=>categoryOf(p)===categoryOf(row));
+    const used=own.length>=MODEL.minimum_peers?own:global;
+    const ratios=used.map(ratioOf).sort((a,b)=>a-b);
+    const valueAt=(q:number) => Math.min(MODEL.value_cap,Math.max(1,Math.round(row.tvl_usd*percentile(ratios,q)*row.growth_multiplier*row.maturity_multiplier)));
+    const peers=[...used].sort((a,b)=>Math.abs(ratioOf(a)-row.category_multiple)-Math.abs(ratioOf(b)-row.category_multiple) || lexical(a.slug,b.slug)).slice(0,5).map(p=>({name:p.name,slug:p.slug,multiple:Number(ratioOf(p).toFixed(3))}));
+    const change=row.change_7d;
+    const growth=change===null?'no 7d data':`${change>=0?'+':''}${change.toFixed(2)}% 7d ${change>0?'lifts':change<0?'cuts':'holds'} value`;
+    const age=row.age_days===null?'listed age unknown':`listed ${row.age_days}d`;
+    const driver=`${row.category_multiple.toFixed(3)}x peers on ${compactUSD(row.tvl_usd)} TVL; ${growth}; ${age}.`;
+    if(driver.length>110) throw new Error('Driver too long: '+row.slug);
+    const implied_low_usd=valueAt(.25), implied_high_usd=valueAt(.75);
+    if(implied_low_usd>row.implied_value_usd || implied_high_usd<row.implied_value_usd) throw new Error('Invalid peer range: '+row.slug);
+    return {...row,implied_low_usd,implied_high_usd,peers,benchmark_peer_count:used.length,driver};
+  });
+  return {...radar,rows};
+}
+
 export function dataScript(radar:ReturnType<typeof buildRadar>['radar']):string {
   return 'window.RADAR = '+JSON.stringify(radar).replace(/</g,'\\u003c')+';\n';
 }

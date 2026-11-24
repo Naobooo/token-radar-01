@@ -1,5 +1,6 @@
 // Shared by Node and the page: one source for the six steps and their arithmetic.
 const dollars = cents => '$' + (cents / 100).toFixed(2).replace(/\.00$/, '');
+const transactions = count => count + (count === 1 ? ' transaction' : ' transactions');
 
 function actions(category) {
   const c = (category || '').toLowerCase();
@@ -28,13 +29,15 @@ function planFor(row, age) {
   const weekly = gas * a.weeklyUnits;
   const exit = gas * a.units;
   const total = setup + visits * weekly + exit;
+  const weeklyEnd = days - 3, coreVisits = Math.floor(weeklyEnd / 7);
+  const finalVisits = visits - coreVisits;
   const steps = [
-    `Create a fresh wallet for ${row.name} on ${chain}; store the seed offline, verify the app from independent official references, and cap approvals at the planned amount. Cost: $0; do not connect a treasury wallet. Time: 5 minutes.`,
-    `On ${chain}, ${a.core}. Working capital: $${capital}. Cost: ${dollars(setup)} budget (${a.units} transactions at ${dollars(gas)} gas each plus ${dollars(reserve)} fee/premium reserve). Time: 15 minutes.`,
-    `On ${chain}, ${a.weekly}. Repeat on days 7, 14 and each seventh day through day ${days}: ${visits} visits. Cost: ${dollars(weekly)}/week (${a.weeklyUnits} transactions at ${dollars(gas)}); reuse the existing capital. Time: 10 minutes/week.`,
-    `Hold the ${row.name} position on ${chain} for ${days} days, with $${capital} of capital locked or reserved throughout. Cost: $0 extra scheduled spend; interest, asset loss and opportunity cost are excluded. Time: ${days} days; monitor the position between weekly visits.`,
-    `Open ${row.name}'s own points/rewards page on ${chain}, if available, and record eligibility without signing. Never pay an upfront claim fee or reveal a seed; any actual onchain claim needs a separate budget. Cost: $0. Time: 10 minutes near the end of the hold.`,
-    `Log dates, wallet and transaction IDs on ${chain}; ${a.exit}, then revoke remaining approvals. Cost: ${dollars(exit)} gas for ${a.units} transactions. Time: 15 minutes plus any queue. Plan total: about ${dollars(total)} in costs plus $${capital} of working capital over ${days} days.`
+    `Day 1: Prepare a fresh wallet for ${row.name} on ${chain}; store the seed offline, verify the app independently, and cap approvals. Reserve $${capital} through the exit day. Cost: $0; never connect a treasury wallet. Time: 1 day; 5 minutes active.`,
+    `Day 2: In ${row.name} on ${chain}, ${a.core}. Capital: $${capital}. Cost: ${dollars(setup)} (${transactions(a.units)} at ${dollars(gas)} gas + ${dollars(reserve)} fee/premium reserve). Time: 1 day; 15 minutes active.`,
+    `Days 3–${weeklyEnd}: In ${row.name} on ${chain}, ${a.weekly}. Visit on days ${Array.from({length:coreVisits},(_,i)=>(i+1)*7).join(', ')} (${coreVisits} visits). Cost: ${dollars(weekly*coreVisits)} total (${dollars(weekly)}/visit; ${a.weeklyUnits} ${a.weeklyUnits===1?'transaction':'transactions'} at ${dollars(gas)} gas). Reuse $${capital}. Time: ${weeklyEnd-2} days; 10 minutes/visit.`,
+    `Day ${days-2}: Keep the ${row.name} position on ${chain} and $${capital} committed to this ${days}-day route.${finalVisits?` Make the final weekly visit: ${a.weekly}.`: ' Review the receipt and withdrawal terms; no new transaction.'} Cost: ${dollars(finalVisits*weekly)}${finalVisits?` (${a.weeklyUnits} ${a.weeklyUnits===1?'transaction':'transactions'} at ${dollars(gas)} gas)`:''}. Time: 1 day; 10 minutes active. Interest and asset loss are excluded.`,
+    `Day ${days-1}: Check ${row.name}'s own rewards page on ${chain}, if available; record eligibility without signing. Never pay a claim fee or reveal a seed. Keep $${capital} reserved. Cost: $0; an onchain claim needs a separate budget. Time: 1 day; 10 minutes active.`,
+    `Day ${days}: In ${row.name} on ${chain}, ${a.exit}; revoke approvals and log transaction IDs. Cost: ${dollars(exit)} (${transactions(a.units)} at ${dollars(gas)} gas). Time: 1 day; 15 minutes active. A withdrawal queue can extend completion. Plan total: ${dollars(total)} estimated costs + $${capital} capital over ${days} days.`
   ];
   return {steps, budget:{chain,capital,hold_days:days,visits,gas_cents:gas,setup_cents:setup,weekly_cents:weekly,exit_cents:exit,total_cents:total}};
 }

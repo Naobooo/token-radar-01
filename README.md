@@ -19,6 +19,8 @@ Open `out/dashboard/index.html` in a browser. All scripts and styles are local. 
 
 The estimator uses winsorized trading-peer market-cap/TVL medians by category, with a global fallback below eight peers, then growth and maturity factors. Its check excludes each token from its fitted peers before comparing TVL times the held-out median with actual market cap. This evaluates the multiple estimator; the growth/maturity overlay is a pre-token assumption.
 
-Farm plans are category templates with explicit capital, transaction counts, weekly cadence and cost arithmetic. They assume supported products and eligibility, which must be checked in the actual app. A snapshot record does not establish a launch, points program or product availability.
+Detail views show a peer 25th–75th percentile value range using linearly interpolated winsorized ratios and the same growth/maturity factors as the headline. This is peer dispersion, not a confidence interval. The five displayed benchmarks are the peers closest to the fitted median; the count names the full fitted set, including global fallback peers.
+
+Farm plans are category templates with explicit capital, transaction counts, weekly cadence and cost arithmetic. Six consecutive day spans cover the stated 30, 45 or 60 total days, and step costs add to the total estimate. They assume supported products and eligibility, which must be checked in the actual app. A snapshot record does not establish a launch, points program or product availability.
 
 `vendor/makefun-board.ts` is the kit's unchanged dossier builder. Screenshots were captured from this dashboard. MIT licensed.

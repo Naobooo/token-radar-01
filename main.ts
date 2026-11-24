@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { boardIssue, buildRadar, dataScript, parseSnapshot } from './lib/model.ts';
+import { boardIssue, buildRadar, dataScript, parseSnapshot, withPeerEvidence } from './lib/model.ts';
 import { buildDossier } from './vendor/makefun-board.ts';
 
 const root=fileURLToPath(new URL('.',import.meta.url));
@@ -22,7 +22,7 @@ const issue=boardIssue(board,snapshot);
 if (issue) throw new Error('Board refused: '+issue);
 mkdirSync(output,{recursive:true});
 writeFileSync(join(output,'board.json'),JSON.stringify({as_of:snapshot.as_of,model_version:'peer-radar-v1',rows:board})+'\n');
-writeFileSync(join(output,'data.js'),dataScript(radar));
+writeFileSync(join(output,'data.js'),dataScript(withPeerEvidence(radar,snapshot)));
 for (const folder of ['dashboard','screenshots']) {
   const source=join(root,folder);
   if (!existsSync(source)) throw new Error('Missing '+folder);
